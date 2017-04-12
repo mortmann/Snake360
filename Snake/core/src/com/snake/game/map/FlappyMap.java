@@ -42,9 +42,11 @@ public class FlappyMap extends Map {
 		//up
 		walls.add(new Wall(0,State.VIEW_HEIGHT-WALL_SIZE,State.VIEW_WIDTH*2,WALL_SIZE));
 		//BEHIND (left out of Screen)
-		walls.add(new Wall(0-WALL_SIZE,0,WALL_SIZE ,State.VIEW_HEIGHT));
+		walls.add(new Wall(0-WALL_SIZE-WALL_SIZE/2,0,WALL_SIZE ,State.VIEW_HEIGHT));
 		//DOOR 
-		
+		//-Riht ot of Screen
+		walls.add(new Wall(State.VIEW_WIDTH+WALL_SIZE+WALL_SIZE/2,0,WALL_SIZE ,State.VIEW_HEIGHT));
+
 		doors.add(new Wall(State.VIEW_WIDTH/2,0,WALL_SIZE,State.VIEW_HEIGHT));
 		doors.add(new Wall(State.VIEW_WIDTH,0,WALL_SIZE,State.VIEW_HEIGHT));
 		doors.add(new Wall(State.VIEW_WIDTH + DOOR_DISTANZ,0,WALL_SIZE,State.VIEW_HEIGHT));

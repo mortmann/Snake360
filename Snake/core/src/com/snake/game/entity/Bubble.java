@@ -65,4 +65,12 @@ public class Bubble  {
 		direction.setAngle(-direction.angle());
 	}
 
+	public Body getBody() {
+		return body;
+	}
+
+	public void setBody(Body body) {
+		this.body = body;
+	}
+
 }

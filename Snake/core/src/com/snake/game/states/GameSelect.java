@@ -164,7 +164,7 @@ public class GameSelect extends State{
 		table.add().size(175, 100);
 		table.add().size(175, 100);
 		table.add(buttonBack).size(175, 75);
-		table.debug();
+//		table.debug();
 		stage.addActor(table);
 	}
 	@Override

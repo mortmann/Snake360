@@ -19,7 +19,7 @@ public class ScoreFileHandler {
 	public static void saveScoreTable(Scoreboard scoreBoard){
 			HashMap<String,Scoreboard> map = new HashMap<String,Scoreboard>();
 			
-			FileHandle f = Gdx.files.local("Snake360.data");
+			FileHandle f = Gdx.files.external("Snake360.data");
 			ObjectOutputStream out = null;
 			
 				File file = new File(f.path());
@@ -62,7 +62,7 @@ public class ScoreFileHandler {
 	
 	@SuppressWarnings("unchecked")
 	public static Scoreboard loadScoreTable(String name){
-		FileHandle f = Gdx.files.local("Snake360.data");
+		FileHandle f = Gdx.files.external("Snake360.data");
 		ObjectInputStream ois;
 		HashMap<String,Scoreboard> map = new HashMap<String,Scoreboard>();
 		try {
