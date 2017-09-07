@@ -2,38 +2,30 @@ package com.snake.game;
 
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.GL20;
 
 public class MainClass extends ApplicationAdapter {
+    private GameStateController gsm;
 
-	private GameStateController gsm;
+    public void create() {
+        this.gsm = new GameStateController();
+    }
 
-	@Override
-	public void create () {
-		gsm = new GameStateController();
-	}
+    public void render() {
+        Gdx.gl.glClear(16384);
+        this.gsm.getState().update(Gdx.graphics.getDeltaTime());
+        this.gsm.getState().render();
+    }
 
-	@Override
-	public void render () {
-		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-		gsm.getState().update(Gdx.graphics.getDeltaTime());
-		gsm.getState().render();
-	}
-	@Override
-	public void resize (int width, int height) {
-		gsm.resize(width,height);
-	}
+    public void resize(int width, int height) {
+        this.gsm.resize(width, height);
+    }
 
-	@Override
-	public void pause () {
-		
-	}
+    public void pause() {
+    }
 
-	@Override
-	public void resume () {
-	}
+    public void resume() {
+    }
 
-	@Override
-	public void dispose () {
-	}
+    public void dispose() {
+    }
 }

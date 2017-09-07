@@ -1,5 +1,8 @@
 package com.snake.game.util;
 
 public enum Difficulty {
-	Easy , Normal, Hard, VeryHard,
+    Easy,
+    Normal,
+    Hard,
+    VeryHard
 }

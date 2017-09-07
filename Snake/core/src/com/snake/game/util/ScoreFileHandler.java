@@ -15,7 +15,7 @@ public class ScoreFileHandler {
 	
 	
 	
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public static void saveScoreTable(Scoreboard scoreBoard){
 			HashMap<String,Scoreboard> map = new HashMap<String,Scoreboard>();
 			
@@ -23,41 +23,40 @@ public class ScoreFileHandler {
 			ObjectOutputStream out = null;
 			
 				File file = new File(f.path());
-			if(!file.exists()){
-				try {
-					file.createNewFile();
-				} catch (IOException e1) {
-					e1.printStackTrace();
-				}
-			} else {
-				ObjectInputStream ois;
-				try {
-					ois = new ObjectInputStream(new FileInputStream(f.path()));
-					map = (HashMap<String, Scoreboard>) ois.readObject();
-					ois.close();
-				} catch (Exception e) {
-					e.printStackTrace();
-				} 
+		if (file.exists()) {
+			try {
+				ObjectInputStream ois = new ObjectInputStream(new FileInputStream(f.path()));
+				map = (HashMap) ois.readObject();
+				ois.close();
+			} catch (Exception e2) {
+				e2.printStackTrace();
 			}
-			map.put(scoreBoard.getName(), scoreBoard);
-			try{
-				FileOutputStream fis = new FileOutputStream(f.path());
-				out = new ObjectOutputStream(fis);  
-		        out.writeObject(map);
-		        out.flush();
-		        out.close();
-		        fis.close();
-		    }catch(Exception e){
-		        e.printStackTrace();
-		    }finally {
-				try {
-					if(out!=null)
-						out.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-				
+		} else {
+			try {
+				file.createNewFile();
+			} catch (IOException e1) {
+				e1.printStackTrace();
 			}
+		}
+		map.put(scoreBoard.getName(), scoreBoard);
+		try {
+			FileOutputStream fis = new FileOutputStream(f.path());
+			out = new ObjectOutputStream(fis);
+			out.writeObject(map);
+			out.flush();
+			out.close();
+			fis.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				if (out != null)
+					out.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+
+		}
 	}
 	
 	@SuppressWarnings("unchecked")

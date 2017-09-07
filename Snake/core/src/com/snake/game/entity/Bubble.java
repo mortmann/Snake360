@@ -1,68 +1,61 @@
 package com.snake.game.entity;
 
-import java.util.ArrayList;
-
-import org.dyn4j.dynamics.Body;
-import org.dyn4j.dynamics.BodyFixture;
-import org.dyn4j.geometry.Convex;
-import org.dyn4j.geometry.Transform;
-
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
-import com.badlogic.gdx.math.Circle;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.physics.box2d.Body;
+import com.badlogic.gdx.physics.box2d.BodyDef;
+import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
+import com.badlogic.gdx.physics.box2d.CircleShape;
+import com.badlogic.gdx.physics.box2d.FixtureDef;
+import com.badlogic.gdx.physics.box2d.World;
+import java.util.Random;
 
-public class Bubble  {
-	
-	private Snake snake;
-	private Vector2 position;
-	private Vector2 direction;
-	private float size;
-	private float speed;
-	private Circle circle;
-	private ShapeRenderer shapeRenderer;
-	private Body body;
+public class Bubble {
+    private static final float SIZE = 0.25f;
+    private Body body;
+    private Vector2 direction;
+    private ShapeRenderer shapeRenderer = new ShapeRenderer();
+    private float speed;
 
-	public Bubble(Vector2 pos, Snake snake){
-		this.position = pos;
-		this.direction = pos.cpy().sub(snake.getPosition()).nor();
-		size = 25f;
-		circle = new Circle();
-		circle.setRadius(size);
-		circle.setPosition(position);
-		shapeRenderer = new ShapeRenderer();
-		speed =3* (snake.getSpeed()/4);
-		
-		body = new Body();
-		Transform t = new Transform();
-		t.setTranslation(pos.x, pos.y);
-		org.dyn4j.geometry.Circle c = new org.dyn4j.geometry.Circle(size);
-		BodyFixture bf = new BodyFixture(c);
-		body.addFixture(bf);
-		body.setTransform(t);
-		
-	}
-	
-	public void render(SpriteBatch batch){
-		batch.end();
-		shapeRenderer.setProjectionMatrix(batch.getProjectionMatrix());
-		shapeRenderer.setAutoShapeType(true);
-		shapeRenderer.begin();		
-		shapeRenderer.set(ShapeType.Filled);
-		shapeRenderer.setColor(Color.BLUE);
-		shapeRenderer.circle(circle.x, circle.y, size/2);
-		shapeRenderer.end();
-		batch.begin();
+    public Bubble(Vector2 pos, Snake snake, World world) {
+        this.direction = pos.cpy().sub(snake.getPosition()).nor().scl(-1.0f);
+        int i = new Random().nextInt(60) + 30;
+        System.out.println(i);
+        this.speed = ((float) i) * snake.getSpeed();
+        BodyDef bDef = new BodyDef();
+        bDef.type = BodyType.DynamicBody;
+        bDef.position.set(pos);
+        FixtureDef fDef = new FixtureDef();
+        CircleShape sh = new CircleShape();
+        sh.setRadius(0.125f);
+        fDef.shape = sh;
+        fDef.friction = 0.0f;
+        fDef.restitution = 1.0f;
+        this.body = world.createBody(bDef);
+        this.body.setUserData(this);
+        this.body.createFixture(fDef);
+        this.body.applyForceToCenter(this.direction.x * this.speed, this.direction.y * this.speed, true);
+    }
 
-	}
-	public void update(float delta){
-		position.add(direction.x*speed*delta,direction.y*speed*delta);
-		circle.setPosition(position);
-	}
-	public void updateDirection(){
-		direction.setAngle(-direction.angle());
-	}
+    public void render(SpriteBatch batch) {
+        batch.end();
+        this.shapeRenderer.setProjectionMatrix(batch.getProjectionMatrix());
+        this.shapeRenderer.setAutoShapeType(true);
+        this.shapeRenderer.begin();
+        this.shapeRenderer.set(ShapeType.Filled);
+        this.shapeRenderer.setColor(Color.BLUE);
+        this.shapeRenderer.circle(this.body.getPosition().x, this.body.getPosition().y, 0.125f, 50);
+        this.shapeRenderer.end();
+        batch.begin();
+    }
 
+    public void update(float delta) {
+    }
+
+    public void OnCollision(Body body) {
+        body.applyForceToCenter(this.direction.x * this.speed, this.direction.y * this.speed, true);
+    }
 }

@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
@@ -13,260 +14,240 @@ import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
+import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.snake.game.GameStateController;
 import com.snake.game.entity.Snake;
 import com.snake.game.map.BigMap;
+import com.snake.game.map.ClassicMap;
 import com.snake.game.map.FlappyMap;
 import com.snake.game.map.Map;
 import com.snake.game.util.MyClient;
 import com.snake.game.util.ScoreFileHandler;
 import com.snake.game.util.Scoreboard;
-import com.snake.game.map.ClassicMap;
 
 public class GameState extends State {
+    private ImageButton backButton;
+    private SpriteBatch batch;
+    private ImageButton buttonLeft;
+    private ImageButton buttonPause;
+    private ImageButton buttonRight;
+    private OrthographicCamera cameraStage;
+    private float countdown = 3.0f;
+    private Dialog dialogEndGame;
+    private boolean dialogShown;
+    private String difficulty;
+    private int direction;
+    private BitmapFont font;
+    private String gamemode;
+    private int level = 0;
+    private Map map;
+    private ImageButton nextLevelButton;
+    private Box2DDebugRenderer renderer;
+    private ImageButton replayButton;
+    private Scoreboard scoreBoard;
+    private Label scoreLabel;
+    private Snake snake;
+    private float tick;
+    private FitViewport viewPortStage;
 
-	private SpriteBatch batch;
-	private ImageButton buttonRight;
-	private ImageButton buttonLeft;
-	private ImageButton buttonPause;
-	private int direction;
-	private Snake snake;
-	private BitmapFont font;
-	private Map map;
-	private Label scoreLabel;
-	private Dialog dialogEndGame;
-	private ImageButton backButton;
-	private ImageButton replayButton;
-	private ImageButton nextLevelButton;
-	private boolean dialogShown;
-	private String gamemode;
-	private int level=0;
-	private String difficulty;
-	private Scoreboard scoreBoard;
-	private MyClient myClient;
-	
-	public GameState(GameStateController gsm) {
-		super(gsm);
-	}
-	@Override
-	public void init() {
-		Gdx.input.setInputProcessor(stage);
-		camera = new OrthographicCamera(VIEW_WIDTH,VIEW_HEIGHT);
-		
-		viewPort=new FitViewport(VIEW_WIDTH,VIEW_HEIGHT);
-		camera.position.set(VIEW_WIDTH/2,VIEW_HEIGHT/2,1);
-		viewPort.setCamera(camera);
-		viewPort.apply();
-		
-		stage=new Stage();
-		Gdx.input.setInputProcessor(stage);
-		skin = new Skin(Gdx.files.internal("data/uiskin.json"));
-		stage.setViewport(viewPort);
-		stage.getViewport().update(Gdx.graphics.getWidth(),Gdx.graphics.getHeight(),true); 
-		myClient =new MyClient();
-		dialogEndGame=new Dialog("GameOver", skin);
-		TextureRegionDrawable drawable =new TextureRegionDrawable(new TextureRegion(new Texture(Gdx.files.internal("gui/back.png"))));
-		backButton=new ImageButton(drawable);
-		drawable =new TextureRegionDrawable(new TextureRegion(new Texture(Gdx.files.internal("gui/replay.png"))));
-		replayButton=new ImageButton(drawable);
-		drawable =new TextureRegionDrawable(new TextureRegion(new Texture(Gdx.files.internal("gui/next.png"))));
-		nextLevelButton=new ImageButton(drawable);
-		backButton.addListener(new ClickListener(){
-			@Override
-			public void clicked(InputEvent event, float x, float y)  {
-				gsm.gameSelect();
-			}
-		}); 
-		replayButton.addListener(new ClickListener(){
-			@Override
-			public void clicked(InputEvent event, float x, float y)  {
-				
-				map.closeDoor();
-				dialogEndGame.hide(null);
-				dialogEndGame.setVisible(false);
-				dialogShown=false;
-				level=0;
-				setUpSnakeMap();
-			}
-		});
-		nextLevelButton.addListener(new ClickListener(){
-			@Override
-			public void clicked(InputEvent event, float x, float y)  {
-				
-				map.closeDoor();
-				dialogEndGame.hide(null);
-				dialogEndGame.setVisible(false);
-				dialogShown=false;
-				level++;
-				setUpSnakeMap();
-			}
-		});
-		dialogEndGame.add(backButton);
-		dialogEndGame.add(replayButton);
-		dialogEndGame.add(nextLevelButton);
-		
-		drawable =new TextureRegionDrawable(new TextureRegion(new Texture(Gdx.files.internal("gui/clear.png"))));
-		buttonRight=new ImageButton(drawable);
-		buttonLeft=new ImageButton(drawable);
-		buttonLeft.setBounds(0,0, VIEW_WIDTH/2, VIEW_HEIGHT);
-		buttonRight.setBounds(VIEW_WIDTH/2, 0, VIEW_WIDTH/2, VIEW_HEIGHT);
-		buttonRight.addListener(new ClickListener(){
-			@Override 
-            public boolean touchDown (InputEvent event, float x, float y, int pointer, int button){
-				direction=-1;
-            	return true;
+    public GameState(GameStateController gsm) {
+        super(gsm);
+    }
+
+    public void init() {
+        Gdx.input.setInputProcessor(this.stage);
+        this.renderer = new Box2DDebugRenderer();
+        this.camera = new OrthographicCamera(Map.MAX_X, Map.MAX_Y);
+        this.viewPort = new FitViewport(Map.MAX_X, Map.MAX_Y);
+        this.camera.position.set(4.7999997f, 2.7f, 1.0f);
+        this.viewPort.setCamera(this.camera);
+        this.viewPort.apply();
+        this.stage = new Stage();
+        Gdx.input.setInputProcessor(this.stage);
+        this.skin = new Skin(Gdx.files.internal(Mainmenu.uiskin));
+        this.cameraStage = new OrthographicCamera();
+        this.cameraStage.setToOrtho(false, State.VIEW_WIDTH, State.VIEW_HEIGHT);
+        this.viewPortStage = new FitViewport(State.VIEW_WIDTH, State.VIEW_HEIGHT);
+        this.viewPortStage.setCamera(this.cameraStage);
+        this.viewPortStage.apply();
+        this.stage = new Stage();
+        this.stage.setViewport(this.viewPortStage);
+        this.stage.getViewport().update(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), true);
+        Gdx.input.setInputProcessor(this.stage);
+        this.dialogEndGame = new Dialog("", this.skin);
+        this.backButton = new ImageButton(new TextureRegionDrawable(new TextureRegion(new Texture(Gdx.files.internal("gui/back.png")))));
+        this.replayButton = new ImageButton(new TextureRegionDrawable(new TextureRegion(new Texture(Gdx.files.internal("gui/replay.png")))));
+        this.nextLevelButton = new ImageButton(new TextureRegionDrawable(new TextureRegion(new Texture(Gdx.files.internal("gui/next.png")))));
+        this.backButton.addListener(new ClickListener() {
+            public void clicked(InputEvent event, float x, float y) {
+                GameState.this.gsm.gameSelect();
             }
-            @Override 
-        	public void touchUp (InputEvent event, float x, float y, int pointer, int button) {
-            	if(direction==-1){
-            		direction=0;
-            	}
-        	}
-		});
-		buttonLeft.addListener(new ClickListener(){
-			@Override 
-            public boolean touchDown (InputEvent event, float x, float y, int pointer, int button){
-            	direction=1;
-            	return true;
+        });
+        this.replayButton.addListener(new ClickListener() {
+            public void clicked(InputEvent event, float x, float y) {
+                GameState.this.map.closeDoor();
+                GameState.this.dialogEndGame.hide(null);
+                GameState.this.dialogEndGame.setVisible(false);
+                GameState.this.dialogShown = false;
+                GameState.this.level = 0;
+                GameState.this.setUpSnakeMap();
             }
-            @Override 
-        	public void touchUp (InputEvent event, float x, float y, int pointer, int button) {
-            	if(direction==1){
-            		direction=0;
-            	}
-        	}
-		});
-		stage.addActor(buttonRight);
-		stage.addActor(buttonLeft);
-		drawable =new TextureRegionDrawable(new TextureRegion(new Texture(Gdx.files.internal("gui/pauseButton.png"))));
-		buttonPause=new ImageButton(drawable);
-		buttonPause.addListener(new ClickListener(){
-			@Override 
-            public void clicked (InputEvent event, float x, float y){
-            	gsm.pauseMenu();
+        });
+        this.nextLevelButton.addListener(new ClickListener() {
+            public void clicked(InputEvent event, float x, float y) {
+                GameState.this.map.closeDoor();
+                GameState.this.dialogEndGame.hide(null);
+                GameState.this.dialogEndGame.setVisible(false);
+                GameState.this.dialogShown = false;
+                GameState gameState = GameState.this;
+                gameState.level = gameState.level + 1;
+                GameState.this.setUpSnakeMap();
             }
-		});
-		buttonPause.setBounds(0,VIEW_HEIGHT-75, 75, 75);
-		
-		scoreLabel = new Label("0", skin);
-		scoreLabel.setColor(255, 0, 0, 1);
-		scoreLabel.setBounds(VIEW_WIDTH-150,VIEW_HEIGHT-75, 75, 75);
-		stage.addActor(scoreLabel);
-		stage.addActor(buttonPause);
-		
-	
-		
-		batch=new SpriteBatch();
-		batch.setProjectionMatrix(viewPort.getCamera().combined);
-		font=new BitmapFont();
-		
+        });
+        this.dialogEndGame.add(this.backButton).padBottom(5.0f);
+        this.dialogEndGame.add(this.replayButton).padBottom(5.0f);
+        this.dialogEndGame.add(this.nextLevelButton).padBottom(5.0f);
+        this.dialogEndGame.setMovable(false);
+        Drawable drawable = new TextureRegionDrawable(new TextureRegion(new Texture(Gdx.files.internal("gui/clear.png"))));
+        this.buttonRight = new ImageButton(drawable);
+        this.buttonLeft = new ImageButton(drawable);
+        this.buttonLeft.setBounds(0.0f, 0.0f, 480.0f, State.VIEW_HEIGHT);
+        this.buttonRight.setBounds(480.0f, 0.0f, 480.0f, State.VIEW_HEIGHT);
+        this.buttonRight.addListener(new ClickListener() {
+            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                GameState.this.direction = -1;
+                return true;
+            }
 
-	}
-	private void setUpSnakeMap(){
-		if(gamemode.contains("Classic")){
-			if(snake==null || snake.isDead()){
-			snake = new Snake();
-			} else {
-				if(snake.isWon()){
-					snake = new Snake(snake.getScore());
-				}
-			}
-			map= new ClassicMap(level, snake);
-		} else
-		if(gamemode.contains("Flappy")){
-			snake = new Snake();
-			map= new FlappyMap(snake);
-		} else
-		if(gamemode.contains("Big")){
-			snake = new Snake();
-			map= new BigMap(snake);
-		}
-		snake.setPosition(map.getSpawnPoint());
-		snake.setDifficulty(difficulty);
-	}
-	@Override
-	public int getID() {
-		return 0;
-	}
+            public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
+                if (GameState.this.direction == -1) {
+                    GameState.this.direction = 0;
+                }
+            }
+        });
+        this.buttonLeft.addListener(new ClickListener() {
+            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                GameState.this.direction = 1;
+                return true;
+            }
 
-	@Override
-	public void onResize(int screenWidth, int screenHeight) {
-		viewPort.update(screenWidth, screenHeight);
-		stage.getViewport().update(screenWidth, screenHeight,true); 
-	}
+            public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
+                if (GameState.this.direction == 1) {
+                    GameState.this.direction = 0;
+                }
+            }
+        });
+        this.stage.addActor(this.buttonRight);
+        this.stage.addActor(this.buttonLeft);
+        this.buttonPause = new ImageButton(new TextureRegionDrawable(new TextureRegion(new Texture(Gdx.files.internal("gui/pauseButton.png")))));
+        this.buttonPause.addListener(new ClickListener() {
+            public void clicked(InputEvent event, float x, float y) {
+                GameState.this.gsm.pauseMenu();
+            }
+        });
+        this.buttonPause.setBounds(0.0f, 465.0f, 75.0f, 75.0f);
+        this.scoreLabel = new Label((CharSequence) "0", this.skin);
+        this.scoreLabel.setColor(255.0f, 0.0f, 0.0f, 1.0f);
+        this.scoreLabel.setBounds(810.0f, 465.0f, 75.0f, 75.0f);
+        this.stage.addActor(this.scoreLabel);
+        this.stage.addActor(this.buttonPause);
+        this.batch = new SpriteBatch();
+        this.batch.setProjectionMatrix(this.viewPort.getCamera().combined);
+        this.font = new BitmapFont();
+    }
 
-	@Override
-	public void render() {
-		
-		batch.begin();
-		map.render(batch);
-		snake.render(batch);
-		
-		
-		font.draw(batch,Integer.toString(Gdx.graphics.getFramesPerSecond()), VIEW_WIDTH-50,VIEW_HEIGHT-50);
-		batch.end();
-		stage.draw();
-	}
+    private void setUpSnakeMap() {
+        this.snake = new Snake();
+        this.snake.setDifficulty(this.difficulty);
+        if (this.gamemode.contains("Classic")) {
+            if (!(this.snake == null || this.snake.isDead() || !this.snake.isWon())) {
+                this.snake = new Snake(this.snake.getScore());
+            }
+            this.map = new ClassicMap(this.level, this.snake);
+        } else if (this.gamemode.contains("Flappy")) {
+            this.map = new FlappyMap(this.snake);
+        } else if (this.gamemode.contains("Big")) {
+            this.map = new BigMap(this.snake);
+        }
+        this.snake.setPosition(this.map.getSpawnPoint(), this.map.getWorld());
+    }
 
-	@Override
-	public void update(float delta) {
-		if(delta>0.033333f){
-			delta=0.033333f;
-		}		
-		scoreLabel.setText(Integer.toString(snake.getScore()));
-		if(!snake.isDead() && !snake.isWon()){	
-			map.update(delta);
-			
-			snake.setTurnDir(direction);
-			snake.update(delta);
-			
-		}
+    public int getID() {
+        return 0;
+    }
 
-		  
-		stage.act(delta);	
-		if((snake.isWon()||snake.isDead()) && !dialogShown){
-			dialogEndGame.setVisible(true);
-			if(!snake.isWon()){
-				nextLevelButton.setVisible(false);
-				if(scoreBoard.addScore("NAME_PLACEHOLDER", snake.getScore())){
-					myClient.sendHighScore(difficulty+gamemode, "NAME_PLACEHOLDER", snake.getScore());
-				}
-				ScoreFileHandler.saveScoreTable(scoreBoard);
-			} else {
-				nextLevelButton.setVisible(true);
-			}
-			
-			dialogEndGame.show(stage);
-			dialogShown=true;
-		}
-	}
+    public void onResize(int screenWidth, int screenHeight) {
+        this.viewPort.update(screenWidth, screenHeight);
+        this.stage.getViewport().update(screenWidth, screenHeight, true);
+    }
 
+    public void render() {
+        this.batch.begin();
+        this.map.render(this.batch);
+        this.snake.render(this.batch);
+        this.stage.getBatch().begin();
+        if (this.countdown >= 0.0f) {
+            this.font.draw(this.stage.getBatch(), new StringBuilder(String.valueOf(Math.round(this.countdown))).append("...").toString(), 480.0f, 270.0f);
+        } else {
+            this.font.newFontCache();
+        }
+        this.font.draw(this.stage.getBatch(), Integer.toString(Gdx.graphics.getFramesPerSecond()), 910.0f, 490.0f);
+        this.stage.getBatch().end();
+        this.batch.end();
+        this.stage.draw();
+    }
 
+    public void update(float delta) {
+        this.stage.act();
+        if (this.countdown > 0.0f) {
+            this.countdown -= delta;
+            return;
+        }
+        this.scoreLabel.setText(Integer.toString(this.snake.getScore()));
+        this.tick += delta;
+        while (this.tick >= 0.016666f) {
+            this.tick -= 0.016666f;
+            if (!(this.snake.isDead() || (this.snake.isWon() && this.map.canWin()))) {
+                this.map.update(0.016666f);
+                this.snake.setTurnDir(this.direction);
+                this.snake.update(0.016666f);
+            }
+        }
+        if (((this.snake.isWon() && this.map.canWin()) || this.snake.isDead()) && !this.dialogShown) {
+            this.dialogEndGame.setVisible(true);
+            if (this.map.canWin() && this.snake.isWon()) {
+                this.nextLevelButton.setVisible(true);
+            } else {
+                this.nextLevelButton.setVisible(false);
+                if (this.scoreBoard.addScore("NAME_PLACEHOLDER", this.snake.getScore())) {
+                    MyClient.sendHighScore(this.difficulty + this.gamemode, "NAME_PLACEHOLDER", this.snake.getScore());
+                }
+                ScoreFileHandler.saveScoreTable(this.scoreBoard);
+            }
+            this.dialogEndGame.show(this.stage);
+            this.dialogShown = true;
+        }
+    }
 
-	@Override
-	public void onExit() {
-		System.out.println("exit");
-	}
+    public void onExit() {
+        System.out.println("exit");
+    }
 
-	@Override
-	public void onEnter() {
-		Gdx.input.setInputProcessor(stage);
-	}
+    public void onEnter() {
+        this.countdown = 3.0f;
+        Gdx.input.setInputProcessor(this.stage);
+    }
 
-	@Override
-	public void dispose() {
+    public void dispose() {
+    }
 
-	}
- 
-	public void setGameMode(String gamemode, String difficulty) {
-		// TODO set gamemode to effect map and/or gamerules
-		this.gamemode=gamemode;
-		this.difficulty=difficulty;
-		setUpSnakeMap();
-		System.out.println(difficulty + map.getNameOfGamemode());
-		scoreBoard=new Scoreboard(10, difficulty + map.getNameOfGamemode());
-	}
-
+    public void setGameMode(String gamemode, String difficulty) {
+        this.gamemode = gamemode;
+        this.difficulty = difficulty;
+        setUpSnakeMap();
+        System.out.println(new StringBuilder(String.valueOf(difficulty)).append(this.map.getNameOfGamemode()).toString());
+        this.scoreBoard = new Scoreboard(10, new StringBuilder(String.valueOf(difficulty)).append(this.map.getNameOfGamemode()).toString());
+    }
 }
