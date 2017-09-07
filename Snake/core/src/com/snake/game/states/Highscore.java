@@ -89,7 +89,6 @@ public class Highscore extends State {
         this.buttonClassic.addListener(new ClickListener() {
             public void clicked(InputEvent event, float x, float y) {
                 Highscore.this.gamemode = "Classic";
-                System.out.println("normal");
                 Highscore.this.changeGamemodeButton(Highscore.this.buttonClassic);
             }
         });
@@ -169,7 +168,7 @@ public class Highscore extends State {
         this.disabledGamemodeButton = this.buttonClassic;
         this.buttonClassic.setTouchable(Touchable.disabled);
         this.buttonNormal.setTouchable(Touchable.disabled);
-        this.hashTopScoresOnline = new Hashtable();
+        this.hashTopScoresOnline = new Hashtable<String, ArrayList<String>>();
         this.buttonTable = new Table(this.skin);
         for (int i = 0; i < 12; i++) {
             this.buttonTable.add().setActorWidth(25.0f);
@@ -188,7 +187,6 @@ public class Highscore extends State {
         this.stage.addActor(this.buttonTable);
         this.scoreBoard = ScoreFileHandler.loadScoreTable("NormalClassic");
         if (this.scoreBoard == null) {
-            System.out.println("null");
             this.scoreBoard = new Scoreboard(10, "NormalClassic");
         }
         setupScoreBoard();
@@ -235,19 +233,17 @@ public class Highscore extends State {
 
     private void updateScoreBoard() {
         this.scoreBoardName = this.difficulty + this.gamemode;
-        System.out.println("update");
         if (this.offline) {
             this.scoreBoard = null;
             this.stage.getActors().removeIndex(this.stage.getActors().indexOf(this.scoreTable, true));
             this.scoreBoard = ScoreFileHandler.loadScoreTable(this.scoreBoardName);
-            System.out.println(this.scoreBoardName + this.scoreBoard);
             if (this.scoreBoard == null) {
                 this.scoreBoard = new Scoreboard(10, this.scoreBoardName);
             }
             setupScoreBoard();
         } else if (this.hashTopScoresOnline.containsKey(this.scoreBoardName)) {
             this.stage.getActors().removeIndex(this.stage.getActors().indexOf(this.scoreTable, true));
-            splitStringsIntoPieces((ArrayList) this.hashTopScoresOnline.get(this.scoreBoardName));
+            splitStringsIntoPieces((ArrayList<String>) this.hashTopScoresOnline.get(this.scoreBoardName));
             setupScoreBoard();
         } else {
             System.out.println("GET HIGHSCORE " + this.scoreBoardName);
@@ -262,8 +258,8 @@ public class Highscore extends State {
     }
 
     public void splitStringsIntoPieces(ArrayList<String> data) {
-        ArrayList<String> names = new ArrayList();
-        ArrayList<Integer> scores = new ArrayList();
+        ArrayList<String> names = new ArrayList<String>();
+        ArrayList<Integer> scores = new ArrayList<Integer>();
         int startRank = 0;
         for (int i = 0; i < data.size(); i++) {
             String[] strings = ((String) data.get(i)).split(";");

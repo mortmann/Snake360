@@ -224,6 +224,7 @@ public class GameState extends State {
                 if (this.scoreBoard.addScore("NAME_PLACEHOLDER", this.snake.getScore())) {
                     MyClient.sendHighScore(this.difficulty + this.gamemode, "NAME_PLACEHOLDER", this.snake.getScore());
                 }
+                
                 ScoreFileHandler.saveScoreTable(this.scoreBoard);
             }
             this.dialogEndGame.show(this.stage);
@@ -248,6 +249,10 @@ public class GameState extends State {
         this.difficulty = difficulty;
         setUpSnakeMap();
         System.out.println(new StringBuilder(String.valueOf(difficulty)).append(this.map.getNameOfGamemode()).toString());
-        this.scoreBoard = new Scoreboard(10, new StringBuilder(String.valueOf(difficulty)).append(this.map.getNameOfGamemode()).toString());
+        String nameScoreBoard = new StringBuilder(String.valueOf(difficulty)).append(this.map.getNameOfGamemode()).toString();
+        scoreBoard = ScoreFileHandler.loadScoreTable(nameScoreBoard);
+        if(scoreBoard==null){
+        	this.scoreBoard = new Scoreboard(10, nameScoreBoard);
+        } 
     }
 }

@@ -1,11 +1,10 @@
 package com.snake.game.util;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.util.HashMap;
 
 import com.badlogic.gdx.Gdx;
@@ -14,18 +13,19 @@ import com.badlogic.gdx.files.FileHandle;
 public class ScoreFileHandler {
 	
 	
-	
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public static void saveScoreTable(Scoreboard scoreBoard){
-			HashMap<String,Scoreboard> map = new HashMap<String,Scoreboard>();
-			
-			FileHandle f = Gdx.files.local("Snake360.data");
-			ObjectOutputStream out = null;
-			
-				File file = new File(f.path());
+		HashMap<String,Scoreboard> map = new HashMap<String,Scoreboard>();
+		
+		FileHandle f = Gdx.files.external("Snake360"+ File.separator + "Snake360.data");
+		if(Gdx.files.external("Snake360").exists()==false){
+			Gdx.files.external("Snake360").mkdirs();
+		}
+		ObjectOutputStream out = null;
+		File file = new File(f.path());
 		if (file.exists()) {
 			try {
-				ObjectInputStream ois = new ObjectInputStream(new FileInputStream(f.path()));
+				ObjectInputStream ois = new ObjectInputStream(f.read());
 				map = (HashMap) ois.readObject();
 				ois.close();
 			} catch (Exception e2) {
@@ -33,6 +33,7 @@ public class ScoreFileHandler {
 			}
 		} else {
 			try {
+				
 				file.createNewFile();
 			} catch (IOException e1) {
 				e1.printStackTrace();
@@ -40,12 +41,12 @@ public class ScoreFileHandler {
 		}
 		map.put(scoreBoard.getName(), scoreBoard);
 		try {
-			FileOutputStream fis = new FileOutputStream(f.path());
-			out = new ObjectOutputStream(fis);
+			OutputStream fos = (OutputStream)f.write(false);
+			out = new ObjectOutputStream(fos);
 			out.writeObject(map);
 			out.flush();
 			out.close();
-			fis.close();
+			fos.close();
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {
@@ -61,7 +62,7 @@ public class ScoreFileHandler {
 	
 	@SuppressWarnings("unchecked")
 	public static Scoreboard loadScoreTable(String name){
-		FileHandle f = Gdx.files.local("Snake360.data");
+		FileHandle f = Gdx.files.external("Snake360"+ File.separator + "Snake360.data");
 		ObjectInputStream ois;
 		HashMap<String,Scoreboard> map = new HashMap<String,Scoreboard>();
 		try {
@@ -69,15 +70,13 @@ public class ScoreFileHandler {
 				saveScoreTable(new Scoreboard(10,name));
 				return null;
 			}
-			FileInputStream fis = new FileInputStream(f.path());
-			ois = new ObjectInputStream(fis);
-			
+			ois = new ObjectInputStream(f.read());
 			map = (HashMap<String, Scoreboard>) ois.readObject();
 			ois.close();
-			fis.close();
 		} catch (Exception e) {
 			e.printStackTrace();
 		} 
 		return map.get(name);
 	}
+	
 }

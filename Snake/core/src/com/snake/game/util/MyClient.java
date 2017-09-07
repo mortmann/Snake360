@@ -18,8 +18,8 @@ public class MyClient {
     private static boolean isConnected;
     private static MyNetworkListener nl;
 
-    public static void setHighscoreScreen(Highscore highscoreScreen) {
-        highscoreScreen = highscoreScreen;
+    public static void setHighscoreScreen(Highscore hs) {
+      highscoreScreen = hs;
     }
 
     public MyClient() {
